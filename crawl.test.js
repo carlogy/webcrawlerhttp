@@ -36,13 +36,12 @@ test("normalizeURL capitals", () => {
   expect(actual).toEqual(expected);
 });
 
-test("gethtmlString", () => {
+test("gethtmlString, no baseURL passed", () => {
   const input =
     '<html><body><a href="https://blog.boot.dev"><span>Go to Boot.dev</span></a></body></html>';
-  const actual = getURLsFromHTML(input);
-  const expected =
-    '<html><body><a href="https://blog.boot.dev"><span>Go to Boot.dev</span></a></body></html>';
-  expect(actual).toEqual(expected);
+  expect(() => {
+    getURLsFromHTML(input);
+  }).toThrow("baseURL parameter is undefined");
 });
 
 test("gethtmlString relativeURL", () => {
@@ -52,4 +51,32 @@ test("gethtmlString relativeURL", () => {
   const actual = getURLsFromHTML(htmlString, baseURL);
   const expected = ["https://blog.boot.dev/path"];
   expect(actual).toEqual(expected);
+});
+
+test("gethtmlString absoluteURL", () => {
+  const htmlString =
+    '<html><body><a href="https://blog.boot.dev/path/"><span>Go to Boot.dev</span></a></body></html>';
+  const baseURL = "https://blog.boot.dev";
+  const actual = getURLsFromHTML(htmlString, baseURL);
+  const expected = ["https://blog.boot.dev/path/"];
+  expect(actual).toEqual(expected);
+});
+
+test("gethtmlString multipleURLs", () => {
+  const htmlString =
+    '<html><body><a href="https://blog.boot.dev/path/"><span>Go to Boot.dev</span></a><a href="/second/"><span>Second</span></a></body></html>';
+  const baseURL = "https://blog.boot.dev";
+  const actual = getURLsFromHTML(htmlString, baseURL);
+  const expected = [
+    "https://blog.boot.dev/path/",
+    "https://blog.boot.dev/second/",
+  ];
+  expect(actual).toEqual(expected);
+});
+
+test("gethtmlString invalid url", () => {
+  const htmlString =
+    '<html><body><a href="Invalid URL"><span>Invalid Url here</span></a></body></html>';
+  const baseURL = "https://blog.boot.dev";
+  expect(getURLsFromHTML).toThrow();
 });
