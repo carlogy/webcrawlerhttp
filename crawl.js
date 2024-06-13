@@ -40,7 +40,34 @@ function getURLsFromHTML(htmlString, baseURL) {
   return addressArray;
 }
 
+async function crawlPage(currentURL) {
+  try {
+    const response = await fetch(currentURL, {
+      method: "GET",
+    });
+
+    const status = await response.status;
+    const contentType = await response.headers.get("Content-Type");
+    const body = await response.text();
+
+    if (status >= 400) {
+      console.log(`Received status code 500 or greater ${status}`);
+      return `Received status code 500 or greater ${status}`;
+    }
+
+    if (!contentType.includes(contentType)) {
+      console.log(`Received incompatible content-type ${contentType}`);
+      return "Received incompatible content-type";
+    }
+    console.log(body);
+    return body;
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
 module.exports = {
   normalizeURL,
   getURLsFromHTML,
+  crawlPage,
 };

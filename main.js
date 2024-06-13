@@ -4,6 +4,8 @@ const { stdin: input, stdout: output } = require("node:process");
 
 const { argv } = require("node:process");
 
+const { crawlPage } = require("./crawl.js");
+
 function main() {
   if (argv.length > 3) {
     console.log(
@@ -16,14 +18,11 @@ function main() {
   } else {
     try {
       const baseURL = argv[2];
-      console.log(`Initiating crawler at ${baseURL.href}`);
+      console.log(`Initiating crawler at ${baseURL}`);
+      crawlPage(baseURL);
     } catch (error) {
       console.log(error.message);
     }
-
-    // argv.forEach((val, index) => {
-    //   console.log(`${ index }: ${ val }`);
-    // });
   }
 }
 
