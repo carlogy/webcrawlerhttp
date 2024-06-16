@@ -4,6 +4,7 @@ function normalizeURL(urlString) {
   const parsedURL = new URL(urlString);
 
   const normalizedURL = `${parsedURL.hostname}${parsedURL.pathname}`;
+
   if (normalizedURL.slice(-1) === "/") {
     return normalizedURL.slice(0, normalizedURL.length - 1);
   } else {
@@ -26,21 +27,52 @@ function getURLsFromHTML(htmlString, baseURL) {
         const urlObject = new URL(address.href);
         addressArray.push(urlObject.href);
       } catch (error) {
+        console.log(`error with absolute url: ${error.message}`);
+      }
+    } else if (!address.href.includes(baseURL) && address.href[0] === "/") {
+      try {
+        const urlObject = new URL(`${baseURL}${address.href.slice(1)}`);
+        addressArray.push(urlObject.href);
+      } catch (error) {
         console.log(`error with relative url: ${error.message}`);
       }
     } else {
       try {
-        const urlObject = new URL(`${baseURL}${address.href}`);
+        const urlObject = new URL(address.href);
         addressArray.push(urlObject.href);
       } catch (error) {
-        console.log(`error with relative url: ${error.message}`);
+        console.log(`error with non-domain url: ${error.message}`);
       }
     }
   }
   return addressArray;
 }
 
-async function crawlPage(currentURL) {
+async function crawlPage(baseURL, currentURL = baseURL, pages = {}) {
+  if (!currentURL.includes(baseURL)) {
+    return pages;
+  }
+
+  const normalizedURL = normalizeURL(currentURL);
+
+  if (pages.hasOwnProperty(normalizedURL)) {
+    pages[normalizedURL] += 1;
+    return pages;
+  } else {
+    pages[normalizedURL] = 1;
+  }
+
+  const currentHTML = await fetchAndParseHTML(currentURL);
+  const currentURLList = getURLsFromHTML(currentHTML, currentURL);
+
+  for (item of currentURLList) {
+    crawlPage(baseURL, item, pages);
+  }
+
+  return pages;
+}
+
+async function fetchAndParseHTML(currentURL) {
   try {
     const response = await fetch(currentURL, {
       method: "GET",
@@ -51,18 +83,23 @@ async function crawlPage(currentURL) {
     const body = await response.text();
 
     if (status >= 400) {
-      console.log(`Received status code 500 or greater ${status}`);
-      return `Received status code 500 or greater ${status}`;
+      console.log(
+        `Error in fetch with status code: ${status}, on page: ${currentURL}`,
+      );
+      return;
     }
 
-    if (!contentType.includes(contentType)) {
-      console.log(`Received incompatible content-type ${contentType}`);
-      return "Received incompatible content-type";
+    if (!contentType.includes("text/html")) {
+      console.log(
+        `None html response, content-type: ${contentType}, on page: ${currentURL}`,
+      );
+      return;
     }
-    console.log(body);
+
     return body;
   } catch (error) {
-    console.log(error.message);
+    console.log(`Error in fetch: ${error.message}, on page: ${currentURL}`);
+    return;
   }
 }
 
